@@ -48,7 +48,7 @@ static void PS_RegModel(void)
     uart_write_bytes(UART_NUM1, (const char *)UART_PS_RegMode, 12);
 }
 
-//模板注册
+//指纹模板注册
 static void PS_EnrollModel(void)
 {
     PS_GetImage();
