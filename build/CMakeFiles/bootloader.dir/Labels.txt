@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/home/woooo/esp-idf/code/finLock/build/CMakeFiles/bootloader
+/home/woooo/esp-idf/code/finLock/build/CMakeFiles/bootloader.rule
+/home/woooo/esp-idf/code/finLock/build/CMakeFiles/bootloader-complete.rule
+/home/woooo/esp-idf/code/finLock/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/home/woooo/esp-idf/code/finLock/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/home/woooo/esp-idf/code/finLock/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/home/woooo/esp-idf/code/finLock/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule
+/home/woooo/esp-idf/code/finLock/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/home/woooo/esp-idf/code/finLock/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/home/woooo/esp-idf/code/finLock/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
