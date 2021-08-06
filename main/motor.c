@@ -20,8 +20,9 @@
 #define UART1_RTS_PIN  		(UART_PIN_NO_CHANGE)
 #define UART1_CTS_PIN  		(UART_PIN_NO_CHANGE)
 
+#define PG_GET 0
 #define GPIO_INPUT_IO_0     25
-#define GPIO_INPUT_PIN_SEL  (1ULL<<GPIO_INPUT_IO_0)
+#define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0)|(1ULL<<PG_GET))
 #define ESP_INTR_FLAG_DEFAULT 0
 
 static xQueueHandle gpio_evt_queue = NULL;
@@ -34,9 +35,9 @@ static void PS_GetImage(void)
     uart_write_bytes(UART_NUM1, (const char *)UART_PS_GetImage, 12);
 }
 //生成特征
-static void PS_GenChar(void)
+static void PS_GenChar(int bufferID)
 {
-    char PS_GenChar_HEX[13] = {0xEF,0x01,0xFF,0xFF,0xFF,0xFF,0x01,0x00,0x04,0x02,0x02,0x00,0x08}; //生成特征
+    char PS_GenChar_HEX[13] = {0xEF,0x01,0xFF,0xFF,0xFF,0xFF,0x01,0x00,0x04,0x02,bufferID,0x00,0x08}; //生成特征
     char *UART_PS_GenChar = PS_GenChar_HEX;
 }
 
@@ -59,7 +60,7 @@ static void PS_AutoIdentify(void)
 {
     char PS_AutoIdentify_HEX[17] = {0xEF,0x01,0xFF,0xFF,0xFF,0xFF,0x01,0x00,0x08,0x32,0x01,0xFF,0xFF,0x00,0x04,0x02,0x3E}; //自动验证
     char *UART_PS_AutoIdentify = PS_AutoIdentify_HEX;
-    uart_write_bytes(UART_NUM1, (const char *)UART_PS_AutoIdentify, 12);
+    uart_write_bytes(UART_NUM1, (const char *)UART_PS_AutoIdentify, 17);
 }
  
 static void IRAM_ATTR gpio_isr_handler(void* arg)
@@ -73,11 +74,24 @@ static void gpio_task_example(void* arg)
     uint32_t io_num;
     for(;;) {
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-            printf("GPIO[%d] intr, val: %d\n", io_num, gpio_get_level(io_num));
-            PS_GenChar();
+            switch (io_num)
+            {
+            case 0:
+                printf("%s\n","开始录入指纹");
+                break;
+
+            case 25:
+                printf("%s\n","开始验证");
+                PS_AutoIdentify();
+                break;   
+            
+            default:
+                break;
+            }
         }
     }
 }
+
 void motor(void)
 {
     gpio_config_t io_conf;
@@ -94,6 +108,7 @@ void motor(void)
 
     //change gpio intrrupt type for one pin
     gpio_set_intr_type(GPIO_INPUT_IO_0, GPIO_INTR_POSEDGE);
+    gpio_set_intr_type(PG_GET, GPIO_INTR_POSEDGE);
 
     //create a queue to handle gpio event from isr
     gpio_evt_queue = xQueueCreate(10, sizeof(uint32_t));
@@ -104,6 +119,7 @@ void motor(void)
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
     //hook isr handler for specific gpio pin
     gpio_isr_handler_add(GPIO_INPUT_IO_0, gpio_isr_handler, (void*) GPIO_INPUT_IO_0);
+    gpio_isr_handler_add(PG_GET, gpio_isr_handler, (void*) PG_GET);
 
     uint8_t recvbuf[BUF_SIZE];
 	int len;
@@ -144,18 +160,22 @@ void motor(void)
 
 		len = uart_read_bytes(UART_NUM1, recvbuf, BUF_SIZE, 100 / portTICK_RATE_MS);//读取数据
         if(len>0){
-            if(recvbuf[0] == 0xEF
-              &&recvbuf[1] == 0x01
-              &&recvbuf[2] == 0xFF
-              &&recvbuf[3] == 0xFF
-              &&recvbuf[4] == 0xFF
-              &&recvbuf[5] == 0xFF
-              &&recvbuf[6] == 0x07){
-              printf("%s\n","验证成功");
+            for(int i = 0; i<len; i++){
+                printf("%02X ",recvbuf[i]);
             }
-            else{
-                printf("%s\n","验证失败");
-            }
+            printf("\n");
+            // if(recvbuf[0] == 0xEF
+            //   &&recvbuf[1] == 0x01
+            //   &&recvbuf[2] == 0xFF
+            //   &&recvbuf[3] == 0xFF
+            //   &&recvbuf[4] == 0xFF
+            //   &&recvbuf[5] == 0xFF
+            //   &&recvbuf[6] == 0x07){
+            //   printf("%s\n","验证成功");
+            // }
+            // else{
+            //     printf("%s\n","验证失败");
+            // }
          
         }
      
